@@ -13,17 +13,18 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Таблиця користувачів
+    # Таблиця користувачів (додано стовпчик is_admin)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 0,
             date_reg TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
 
-    # Таблиця книг (статус за замовчуванням: 'Хочу прочитати')
+    # Таблиця книг
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS books (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +39,15 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )
     ''')
+
+    # Автоматично створюємо одного адміна для тестів, якщо таблиця порожня
+    # Логін: admin, Пароль: admin123 (хеш: 24004524c56e29db1a4d952a13ee42a5a037803d2ec4e3d30e3776bf38b1d9d9)
+    cursor.execute('SELECT COUNT(*) FROM users WHERE username = "admin"')
+    if cursor.fetchone()[0] == 0:
+        cursor.execute(
+            'INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)',
+            ('admin', '24004524c56e29db1a4d952a13ee42a5a037803d2ec4e3d30e3776bf38b1d9d9', 1)
+        )
 
     conn.commit()
     conn.close()
